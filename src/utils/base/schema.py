@@ -1,7 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.openapi import Schema
-
 from rest_framework.status import is_success
 
 

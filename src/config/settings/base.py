@@ -1,7 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
 
-from corsheaders.defaults import default_headers
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -19,7 +18,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    "corsheaders",
     'drf_yasg',
 
     # Needed to be added to have access to
@@ -27,7 +25,6 @@ INSTALLED_APPS = [
     # 'django.contrib.postgres',
 
     'account',
-    'project_api_key',
 ]
 
 REST_FRAMEWORK = {
@@ -48,11 +45,8 @@ REST_FRAMEWORK = {
     ),
 }
 
-API_KEY_HEADER = "HTTP_BEARER_API_KEY"
-API_SEC_KEY_HEADER = "HTTP_BEARER_SEC_API_KEY"
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -62,13 +56,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
-CORS_ALLOWED_ORIGINS = []
-
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "Bearer-Api-Key",
-    "Bearer-Sec-Api-Key",
-]
 
 ROOT_URLCONF = 'config.urls'
 AUTH_USER_MODEL = 'account.User'
@@ -106,10 +93,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-USE_CACHE = config("USE_CACHE", default=False, cast=bool)
-REDIS_LOCATION = config("REDIS_LOCATION", default='redis://127.0.0.1:6379')
+REDIS_LOCATION = config("REDIS_LOCATION", default="")
 
-if USE_CACHE:
+if REDIS_LOCATION:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
@@ -131,14 +117,23 @@ USE_TZ = True
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config("DB_NAME", default=''),
-        'USER': config("DB_USER", default=''),
-        'PASSWORD': config("DB_PASSWORD", default=''),
-        'HOST': 'localhost',
-        'PORT': '',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+DB_NAME = config("DB_NAME", default='')
+
+if DB_NAME:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': DB_NAME,
+            'USER': config("DB_USER", default=''),
+            'PASSWORD': config("DB_PASSWORD", default=''),
+            'HOST': 'localhost',
+        }
+    }
 
 
 STATIC_URL = '/static/'
@@ -212,3 +207,5 @@ PRINT_LOG = True
 OFF_EMAIL = True
 
 MAX_IMAGE_UPLOAD_SIZE = 2621440  # 2.5MB
+
+APP_NAME = 'RoadFlow'

@@ -1,0 +1,24 @@
+{% extends 'account/email/base.html' %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="content">
+        <p>Thanks for registering.</p>
+        <p>Enjoy our AI roadmap recommendation system.</p>
+
+        <p>Please verify your account using the OTP (One Time Passsword) provided below</p>
+
+        <h3>{{otp}}</h3>
+
+        <p>
+            If you did not register, please ignore this email.
+        </p>
+
+        <p>Have a question? Send us a messge or reply to this mail.</p>
+    </div>
+</div>
+
+{% endblock content %}

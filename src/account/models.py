@@ -7,19 +7,18 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 
 
-T = TypeVar('T', bound=AbstractBaseUser)
-
 
 class UserManager(BaseUserManager):
     def create_base_user(
-        self, email, is_active=True,
+        self, email, username, is_active=True,
         is_staff=False, is_admin=False
-    ) -> T:
+    ) -> AbstractBaseUser:
         if not email:
             raise ValueError("User must provide an email")
 
         user: User = self.model(
-            email=self.normalize_email(email)
+            email=self.normalize_email(email),
+            username=username,
         )
         user.active = is_active
         user.admin = is_admin
@@ -29,43 +28,47 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(
-        self, email, password=None, is_active=True,
+        self, email, username, password=None, is_active=True,
         is_staff=False, is_admin=False
-    ) -> T:
-        user = self.create_base_user(email, is_active, is_staff, is_admin)
+    ):
         if not password:
             raise ValueError("User must provide a password")
+        user = self.create_base_user(
+            email, username, is_active, is_staff, is_admin)
         user.set_password(password)
         user.save()
         return user
 
-    def create_staff(self, email, password=None) -> T:
-        user = self.create_user(email=email, password=password, is_staff=True)
+    def create_staff(self, email, username, password=None):
+        user = self.create_user(
+            email, username, password, is_staff=True)
         return user
 
-    def create_superuser(self, email, password=None) -> T:
+    def create_superuser(self, email, username, password=None):
         user = self.create_user(
-            email=email, password=password, is_staff=True, is_admin=True)
+            email, username, password, is_staff=True, is_admin=True)
         return user
 
     def get_staffs(self):
         return self.filter(staff=True)
 
-    def get_admins(self):
-        return self.filter(admin=True)
-
 
 class User(AbstractBaseUser):
     email = models.EmailField(unique=True)
-
-    # Admin fields
+    username = models.CharField(
+        max_length=60, unique=True,
+        validators=[validate_special_char],
+        help_text="Username must be unique and \
+must not contain special characters"
+    )
     active = models.BooleanField(default=True)
     staff = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now=True)
     verified_email = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
 
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ["username"]
     USERNAME_FIELD = "email"
 
     objects = UserManager()
@@ -77,28 +80,16 @@ class User(AbstractBaseUser):
         return True
 
     @property
-    def username(self) -> str:
-        return self.profile.username
-
-    @property
     def get_emailname(self) -> str:
         """Return the x part of an email e.g [x]@gmail.com"""
         return self.email.split('@')[0]
 
     def __str__(self) -> str:
-        return self.email
+        return self.username
 
     def email_user(self, subject, message):
         val = send_email(subject=subject, message=message, email=self.email)
         return True if val else False
-
-    @property
-    def first_name(self) -> str:
-        return self.profile.first_name
-
-    @property
-    def last_name(self) -> str:
-        return self.profile.last_name
 
     @property
     def is_active(self) -> bool:
@@ -113,31 +104,40 @@ class User(AbstractBaseUser):
         return self.admin
 
 
+class Skill(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __str__(self) -> str:
+        return self.name.title()
+
+
+class Interest(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __str__(self) -> str:
+        return self.name.title()
+
+
+class Personality(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __str__(self) -> str:
+        return self.name.title()
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    username = models.CharField(
-        max_length=60, unique=True, validators=[validate_special_char])
-    created = models.DateTimeField(auto_now=True)
-
-    first_name = models.CharField(
-        max_length=30, validators=[validate_special_char])
-    last_name = models.CharField(
-        max_length=30, validators=[validate_special_char])
-
-    phone = models.CharField(max_length=20, validators=[validate_phone])
-    image = models.ImageField(
-        upload_to='accounts/profiles', null=True, blank=True)
-
-    address = models.CharField(max_length=200, blank=True)
-    city = models.CharField(max_length=60, blank=True)
-    state = models.CharField(max_length=60, blank=True)
-    zip = models.CharField(max_length=6, blank=True)
-
-    about = models.TextField(max_length=2500, blank=True)
-
-    @property
-    def fullname(self):
-        return f"{self.first_name} {self.last_name}"
+    fullname = models.CharField(
+        max_length=30,
+        validators=[validate_special_char],
+        blank=True)
+    bio = models.TextField(max_length=1000, blank=True)
+    github = models.URLField(blank=True)
+    twitter = models.URLField(blank=True)
+    skills = models.ManyToManyField(Skill, blank=True)
+    interest = models.ManyToManyField(Interest, blank=True)
+    personality = models.ForeignKey(
+        Personality, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.get_fullname
@@ -146,12 +146,20 @@ class Profile(models.Model):
     def get_fullname(self) -> str:
         return self.fullname.title()
 
-    def get_user_name_with_id(self) -> str:
-        user_name = self.first_name + self.last_name
-        return f"{user_name}-{self.user.id}"
-
 
 @receiver(post_save, sender=User)
 def create_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+
+
+class UsedResetToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=100)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.user.email
+
+    class Meta:
+        verbose_name_plural = "Used Reset Tokens"

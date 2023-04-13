@@ -35,28 +35,15 @@ class TokenGenerateResponseSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, required=True, validators=[validate_password])
-    first_name = serializers.CharField(
-        required=True, help_text='User first name',
-        validators=[validate_special_char], max_length=30)
-    last_name = serializers.CharField(
-        required=True, help_text='User last name',
-        validators=[validate_special_char], max_length=30)
 
     class Meta:
         model = User
-        fields = ('password', 'email', 'first_name', 'last_name')
+        fields = ('password', 'email')
 
     def create(self, validated_data):
         email = validated_data.get('email')
         password = validated_data.get('password')
         user = User.objects.create_user(email=email, password=password)
-
-        # Get the profile and update the first and last names
-        profile = user.profile
-        profile.first_name = validated_data.get('first_name')
-        profile.last_name = validated_data.get('last_name')
-        profile.save()
-
         return user
 
 

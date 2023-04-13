@@ -2,20 +2,19 @@ import re
 from functools import partial
 
 import pytest
+from account.models import Profile
 from cryptography.fernet import Fernet
 from django.db import models
 from django.test import TestCase
 from rest_framework import serializers
-
-from authentication.models import Profile
 from tests.models import ModelText
 from utils.base.general import (Crypthex, add_queryset, capture_output,
                                 check_serialized_data, choices_to_dict,
                                 compare_hash, convert_list_to_choices,
-                                generate_unique_link_id, get_randint_range,
-                                get_random_secret, get_tokens_for_user,
-                                get_usable_name, invalid_str, merge_querysets,
-                                printt, random_otp, random_text, send_email,
+                                get_randint_range, get_random_secret,
+                                get_tokens_for_user, get_usable_name,
+                                invalid_str, merge_querysets, printt,
+                                random_otp, random_text, send_email,
                                 username_gen)
 
 
@@ -175,24 +174,6 @@ def test_capture_output_complex():
     partial_func = partial(func, "test")
     with capture_output(partial_func) as output:
         assert output.strip("\n") == "test"
-
-
-class GenerateUniqueLinkIdModel(models.Model):
-    link_id = models.CharField(max_length=255, unique=True)
-
-
-@pytest.mark.django_db
-def test_generate_unique_link_id(settings):
-    obj = GenerateUniqueLinkIdModel()
-
-    link_id = generate_unique_link_id(obj)
-    assert link_id is not None
-    obj.link_id = link_id
-    obj.save()
-
-    link_id = generate_unique_link_id(obj)
-    assert link_id != obj.link_id
-    assert link_id.startswith(settings.LINK_ID_PREFIX)
 
 
 @pytest.mark.parametrize(
