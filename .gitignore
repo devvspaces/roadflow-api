@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+auto.bat
+
 # Distribution / packaging
 .Python
 build/
@@ -60,6 +62,8 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+static/
+media/
 
 # Flask stuff:
 instance/
@@ -127,3 +131,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode
