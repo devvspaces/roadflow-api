@@ -16,4 +16,4 @@ Here is a link to the [Github Project](https://github.com/users/devvspaces/proje
 
 Here is a db diagram for the project database - [Diagram](https://dbdiagram.io/d/6437cb1c8615191cfa8d9bc1)
 
-<iframe width="560" height="315" src='https://dbdiagram.io/embed/6437cb1c8615191cfa8d9bc1'> </iframe>
+![](./Roadflow%20DB.png)
