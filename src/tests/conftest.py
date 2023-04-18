@@ -1,20 +1,15 @@
-import datetime
+from io import BytesIO
 from typing import Callable, Dict, TypeVar
 from unittest import TestCase
-from io import BytesIO
-from PIL import Image
-from django.core.files.base import File
 
 import pytest
 from django.contrib.admin import AdminSite
+from django.core.files.base import File
 from model_bakery import baker
+from PIL import Image
 from rest_framework.test import APIClient
 from utils.base.constants import User
 from utils.base.general import get_tokens_for_user
-
-from business.models import Business
-from project_api_key.models import ProjectApiKey
-
 
 U = TypeVar('U', bound=TestCase)
 
@@ -74,7 +69,6 @@ def inactive_user():
 def user_with_no_profile():
     return baker.make(
         User, active=True,
-        first_name='John', last_name='Doe'
     )
 
 
@@ -82,8 +76,6 @@ def user_with_no_profile():
 def user():
     user = baker.make(
         User, active=True,
-        first_name='John', last_name='Doe',
-        phone='+2348123456789',
     )
     user.set_password('test1234')
     user.save()
@@ -102,24 +94,6 @@ def admin():
     return baker.make(
         User, active=True, staff=True,
         admin=True,
-    )
-
-
-@pytest.fixture
-def default_currency(settings):
-    return baker.make(
-        'exchange.Currency',
-        symbol=settings.DEFAULT_CURRENCY
-    )
-
-
-@pytest.fixture
-def business(user):
-    return Business.objects.create(
-        name='Test Business',
-        user=user,
-        business_type='starter',
-        dob=datetime.date(2000, 1, 1),
     )
 
 
@@ -146,7 +120,7 @@ def test_case():
 
 
 @pytest.fixture
-def keyless_base_client():
+def base_client():
 
     def inner(method: str = "post"):
         client = API_CLIENT_METHODS[method]
@@ -166,52 +140,8 @@ def keyless_base_client():
 
 
 @pytest.fixture
-def keyless_post(keyless_base_client):
-    return keyless_base_client()
-
-
-@pytest.fixture
-def keyless_get(keyless_base_client):
-    return keyless_base_client('get')
-
-
-@pytest.fixture
-def keyless_delete(keyless_base_client):
-    return keyless_base_client('delete')
-
-
-@pytest.fixture
-def keyless_patch(keyless_base_client):
-    return keyless_base_client('patch')
-
-
-@pytest.fixture
-def keyless_put(keyless_base_client):
-    return keyless_base_client('put')
-
-
-@pytest.fixture
-def base_client(admin_api_key_headers, keyless_base_client):
-
-    def inner(method=None):
-
-        def child(url: str, data: dict = None, headers: dict = None):
-
-            if headers is None:
-                headers = {}
-
-            headers.update(admin_api_key_headers)
-
-            return keyless_base_client(method)(url, data, headers)
-
-        return child
-
-    return inner
-
-
-@pytest.fixture
 def post(base_client):
-    return base_client("post")
+    return base_client()
 
 
 @pytest.fixture
@@ -274,27 +204,6 @@ def logged_put(logged_client):
 @pytest.fixture
 def logged_patch(logged_client):
     return logged_client('patch')
-
-
-def _get_api_key_headers(user, settings):
-    project_api_key = ProjectApiKey.objects.create(user=user)
-
-    sec_key = project_api_key.get_cached_pass_key()
-    pub_key = project_api_key.pub_key
-    return {
-        settings.API_KEY_HEADER: pub_key,
-        settings.API_SEC_KEY_HEADER: sec_key,
-    }
-
-
-@pytest.fixture
-def admin_api_key_headers(admin, settings):
-    return _get_api_key_headers(admin, settings)
-
-
-@pytest.fixture
-def basic_api_key_headers(user, settings):
-    return _get_api_key_headers(user, settings)
 
 
 @pytest.fixture

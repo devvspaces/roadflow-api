@@ -2,40 +2,30 @@
 Mixins to be used across all packages
 """
 
-from typing import Callable, List
+from typing import Callable, List, Iterable
 
 from django.contrib import admin
 from django.db import models
 from django.db.models.query import QuerySet
 from rest_framework import mixins, viewsets
 from rest_framework.response import Response
-from utils.base.fields import TrackingCodeField
-
-
-class BaseModelTracker(models.Model):
-    """
-    Abstract model for creating tracking_code for models.
-    Prefix for making tracking code diffent
-    on each model if needed
-    """
-
-    code_prefix = 'UID'
-
-    tracking_code = TrackingCodeField(prefix=code_prefix, max_length=60)
-
-    class Meta:
-        abstract = True
 
 
 class ModelChangeFunc(models.Model):
+    """
+    Abstract model to be used to monitor changes to a model
+
+    monitor_change: dict = {
+        field: function
+        }
+        Field is the field to monitor, and the function is the function to run
+        when the field is changed. The function must take in the model as the
+        only argument.
+    """
 
     class Meta:
         abstract = True
 
-    # Setup update func
-    """
-    Key and Update function to run when something changes
-    """
     monitor_change: dict = None
 
     @property
@@ -45,10 +35,10 @@ class ModelChangeFunc(models.Model):
         return []
 
     @property
-    def monitor_change_funcs(self) -> List[Callable[..., None]]:
+    def monitor_change_funcs(self) -> Iterable[Callable[..., None]]:
         if self.monitor_change:
             return set([func for _, func in self.monitor_change.items()])
-        return tuple()
+        return set()
 
     def get_clone_field(self, name: str) -> str:
         return f"__{name}"
@@ -58,6 +48,12 @@ class ModelChangeFunc(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Set clone fields value to the initial value
+        for field in self.monitor_change_fields:
+            clone_field = self.get_clone_field(field)
+            normal_value = self.get_attr(field)
+            setattr(self, clone_field, normal_value)
 
     def call_updates(self):
         """Forcefully call all update functions"""
@@ -105,6 +101,7 @@ class ListMixinUtils(object):
     Implementation of a get reponse passed a queryset manually,
     to be used with list views sets with different list urls.
     """
+
     def get_with_queryset(self, queryset: QuerySet):
         page = self.paginate_queryset(queryset)
         if page is not None:

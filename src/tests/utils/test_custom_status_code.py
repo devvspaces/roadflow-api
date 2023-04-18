@@ -48,9 +48,3 @@ class TestCustomStatusCode:
 
     def test_http_440_invalid_signature(self):
         assert self.code.HTTP_440_INVALID_SIGNATURE == 440
-
-    def test_http_441_no_business_account(self):
-        assert self.code.HTTP_441_NO_BUSINESS_ACCOUNT == 441
-
-    def test_http_442_bad_payment_request(self):
-        assert self.code.HTTP_442_BAD_PAYMENT_REQUEST == 442

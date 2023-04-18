@@ -1,7 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.openapi import Schema
-
 from rest_framework.status import is_success
 
 
@@ -67,6 +66,26 @@ class BaseSchema(SwaggerAutoSchema):
                         data[code].schema)
             except AttributeError:
                 pass
+
+        # Add 400 response for all methods
+        data['400'] = openapi.Response(
+            description='Bad request',
+            schema=self.wrap_schema_error(
+                Schema(
+                    type='object',
+                    description='Error message key and value',
+                    properties={
+                        'key': Schema(
+                            type='array',
+                            items=Schema(
+                                type='string',
+                                description='Error messages'
+                            )
+                        )
+                    }
+                )
+            )
+        )
 
         return openapi.Responses(
             responses=data

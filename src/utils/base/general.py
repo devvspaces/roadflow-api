@@ -1,10 +1,10 @@
-from functools import reduce
 import hmac
 import os
 import secrets
 import string
 import sys
 from contextlib import contextmanager
+from functools import reduce
 from io import StringIO
 from typing import Callable, Generator, List
 
@@ -15,10 +15,10 @@ from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 from django.utils.crypto import RANDOM_STRING_CHARS, get_random_string
 from django.utils.encoding import force_bytes
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.openapi import Schema
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.serializers import Serializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .logger import err_logger, logger  # noqa
 
@@ -185,7 +185,7 @@ def send_email(email, subject, message, fail=True):
 
     val = send_mail(
         subject=subject, message=message,
-        html_message=message, rom_email=settings.DEFAULT_FROM_EMAIL,
+        html_message=message, from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[email], fail_silently=fail)
 
     return True if val else False
@@ -324,32 +324,11 @@ def get_random_secret() -> str:
     :rtype: str
     """
     length = get_randint_range(
-        settings.WEBHOOK_SECRET_LENGTH_START,
-        settings.WEBHOOK_SECRET_LENGTH_STOP
+        settings.SECRET_LENGTH_START,
+        settings.SECRET_LENGTH_STOP
     )
     allowed_chars = RANDOM_STRING_CHARS + '.-_!$;*#@'
     return get_random_string(length, allowed_chars)
-
-
-def get_usable_name(profile, name: str = None) -> str:
-    """
-    Get a unique username for newly created users
-
-    :param profile: Profile model
-    :type profile: authentication.models.Profile
-    :param name: last generated username, defaults to None
-    :type name: str, optional
-    :return: unique username
-    :rtype: str
-    """
-    if not name:
-        name = username_gen(5)
-
-    # Check if the name exists in the Profile table
-    exists = profile.objects.filter(username=name).exists()
-    if exists:
-        return get_usable_name(profile, username_gen(5))
-    return name
 
 
 @contextmanager
