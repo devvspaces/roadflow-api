@@ -1,3 +1,4 @@
+from base64 import urlsafe_b64encode
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -5,6 +6,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from account.api.base.tokens import TokenGenerator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from account.models import User
 from utils.base.general import get_tokens_for_user
@@ -56,28 +60,6 @@ class ValidateRegistrationOtpView(generics.GenericAPIView):
         user_serializer = serializers.UserSerializer(user)
         return Response(
             data=user_serializer.data,
-            status=status.HTTP_201_CREATED
-        )
-
-
-class ValidateForgetPasswordOtpView(generics.GenericAPIView):
-    """
-    Validate the forget password otp sent to user's email.
-
-    Return a token to be used for resetting password.
-    """
-    permission_classes = []
-    serializer_class = serializers.ValidateRegistrationOtpSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Create a token for user to reset password
-        # uidb64 and token are used to identify the user
-
-        return Response(
-            data=serializer.data,
             status=status.HTTP_201_CREATED
         )
 
@@ -170,6 +152,12 @@ class ChangePasswordView(generics.UpdateAPIView):
 
 
 class RequestForgetPasswordView(generics.GenericAPIView):
+    """
+    Request a password reset email (otp).
+
+    Otp is sent to user's email.
+    """
+
     serializer_class = serializers.RequestForgetPasswordSerializer
     permission_classes = []
 
@@ -180,7 +168,45 @@ class RequestForgetPasswordView(generics.GenericAPIView):
         return Response(data=serializer.data)
 
 
+class ValidateForgetPasswordOtpView(generics.GenericAPIView):
+    """
+    Validate the forget password otp sent to user's email.
+
+    Return a token to be used for resetting password.
+    """
+    permission_classes = []
+    serializer_class = serializers.ValidateOtpSerializer
+
+    @swagger_auto_schema(
+        responses={200: serializers.ForgetPasswordTokenSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Create a token for user to reset password
+        generator = TokenGenerator()
+        user = serializer.validated_data['email']
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = generator.make_token(user)
+        # uidb64 and token are used to identify the user
+
+        return Response(
+            data={
+                'uidb64': uidb64,
+                'token': token
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
 class ForgetPasswordView(generics.GenericAPIView):
+    """
+    Reset password using the token received by validating the otp.
+
+    User password will be reset to the new password.
+    Returns a new access and refresh token including user details.
+    """
     serializer_class = serializers.ForgetPasswordSerializer
     permission_classes = []
 
@@ -192,7 +218,7 @@ class ForgetPasswordView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user: User = serializer.validated_data.get('user')
+        user = serializer.save()
         user_details = serializers.UserSerializer(user).data
         response_data = {
             'tokens': get_tokens_for_user(user),

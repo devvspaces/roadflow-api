@@ -2,6 +2,10 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth import get_user_model
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from account.api.base.tokens import TokenGenerator
 
 from account.models import Profile, User
 
@@ -64,6 +68,11 @@ class ValidateOtpSerializer(serializers.Serializer):
             raise serializers.ValidationError('Invalid OTP')
 
         return attrs
+
+
+class ForgetPasswordTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    uidb64 = serializers.CharField(required=True)
 
 
 class ValidateRegistrationOtpSerializer(ValidateOtpSerializer):
@@ -140,7 +149,29 @@ class ForgetPasswordSerializer(serializers.Serializer):
         write_only=True, required=True, validators=[validate_password])
 
     def validate(self, attrs):
-        # Validate the uidb64 and token
+        """
+        Validate the token and uidb64
+        """
+        uidb64 = attrs['uidb64']
+        token = attrs['token']
+
+        User = get_user_model()
+        user = None
+
+        try:
+            uidb64 = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=uidb64)
+        except (
+            TypeError, ValueError, OverflowError,
+            User.DoesNotExist
+        ):
+            raise serializers.ValidationError('Invalid token')
+
+        generator = TokenGenerator()
+        if not generator.check_token(user, token):
+            raise serializers.ValidationError('Invalid token')
+
+        attrs['user'] = user
         return attrs
 
     def save(self, **kwargs):

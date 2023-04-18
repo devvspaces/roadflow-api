@@ -14,11 +14,15 @@ urlpatterns = [
         views.UserRetrieveUpdateAPIView.as_view(),
         name='user_retrieve_update'),
     path(
-        'request-password-reset/',
+        'forget-password/request-reset/',
         views.RequestForgetPasswordView.as_view(),
         name='request_password_reset'),
     path(
-        'password-reset/',
+        'forget-password/validate-otp/',
+        views.ValidateForgetPasswordOtpView.as_view(),
+        name='request_password_reset'),
+    path(
+        'forget-password/reset/',
         views.ForgetPasswordView.as_view(),
         name='password_reset'),
     path('token/user/refresh/',
