@@ -67,6 +67,26 @@ class BaseSchema(SwaggerAutoSchema):
             except AttributeError:
                 pass
 
+        # Add 400 response for all methods
+        data['400'] = openapi.Response(
+            description='Bad request',
+            schema=self.wrap_schema_error(
+                Schema(
+                    type='object',
+                    description='Error message key and value',
+                    properties={
+                        'key': Schema(
+                            type='array',
+                            items=Schema(
+                                type='string',
+                                description='Error messages'
+                            )
+                        )
+                    }
+                )
+            )
+        )
+
         return openapi.Responses(
             responses=data
         )

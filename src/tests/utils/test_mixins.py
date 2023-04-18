@@ -35,19 +35,6 @@ class TestModelChangeMixin:
             'other': check_field,
         }
 
-    class MultiModel(ModelChangeFunc):
-        field = models.CharField(max_length=100)
-        other = models.CharField(max_length=100)
-        check = []
-
-        def check_field(self):
-            self.check.append()
-
-        monitor_change = {
-            'field': check_field,
-            'other': check_field,
-        }
-
     def test_monitor_change_fields(self):
         assert self._Model().monitor_change_fields == ['field']
 
@@ -55,17 +42,17 @@ class TestModelChangeMixin:
         assert self.NoModelCheck().monitor_change_fields == []
 
     def test_monitor_change_funcs(self):
-        assert self._Model().monitor_change_funcs == [
+        assert self._Model().monitor_change_funcs == set([
             self._Model.check_field,
-        ]
+        ])
 
     def test_monitor_change_funcs_no_model_check(self):
-        assert self.NoModelCheck().monitor_change_funcs == []
+        assert self.NoModelCheck().monitor_change_funcs == set()
 
     def test_monitor_change_funcs_similar_model_check(self):
-        assert self.SimilarModelCheck().monitor_change_funcs == [
+        assert self.SimilarModelCheck().monitor_change_funcs == set([
             self.SimilarModelCheck.check_field,
-        ]
+        ])
 
     def test_get_clone_field(self):
         assert self._Model().get_clone_field('field') == '__field'

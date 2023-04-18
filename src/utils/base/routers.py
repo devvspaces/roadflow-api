@@ -117,4 +117,3 @@ class CustomRouterNoLookup(DefaultRouter):
             initkwargs={'suffix': 'Delete'}
         ),
     ]
-

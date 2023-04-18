@@ -69,7 +69,6 @@ def inactive_user():
 def user_with_no_profile():
     return baker.make(
         User, active=True,
-        first_name='John', last_name='Doe'
     )
 
 
@@ -77,8 +76,6 @@ def user_with_no_profile():
 def user():
     user = baker.make(
         User, active=True,
-        first_name='John', last_name='Doe',
-        phone='+2348123456789',
     )
     user.set_password('test1234')
     user.save()
@@ -97,14 +94,6 @@ def admin():
     return baker.make(
         User, active=True, staff=True,
         admin=True,
-    )
-
-
-@pytest.fixture
-def default_currency(settings):
-    return baker.make(
-        'exchange.Currency',
-        symbol=settings.DEFAULT_CURRENCY
     )
 
 

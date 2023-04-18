@@ -2,44 +2,30 @@ import re
 from functools import partial
 
 import pytest
-from account.models import Profile
 from cryptography.fernet import Fernet
 from django.db import models
 from django.test import TestCase
 from rest_framework import serializers
+
+from account.models import Profile
 from tests.models import ModelText
 from utils.base.general import (Crypthex, add_queryset, capture_output,
                                 check_serialized_data, choices_to_dict,
                                 compare_hash, convert_list_to_choices,
                                 get_randint_range, get_random_secret,
-                                get_tokens_for_user, get_usable_name,
-                                invalid_str, merge_querysets, printt,
-                                random_otp, random_text, send_email,
-                                username_gen)
+                                get_tokens_for_user, invalid_str,
+                                merge_querysets, printt, random_otp,
+                                random_text, send_email, username_gen)
 
 
 class GetUniqueNameModel(models.Model):
     username = models.CharField(max_length=255, unique=True)
 
 
-@pytest.mark.django_db
-def test_get_usable_name(settings):
-    obj = GetUniqueNameModel()
-
-    username = get_usable_name(Profile)
-    assert username is not None
-    assert username.startswith(settings.USERNAME_PREFIX)
-    obj.username = username
-    obj.save()
-
-    username = get_usable_name(Profile)
-    assert username != obj.username
-
-
 def test_get_random_secret(settings):
     computed = get_random_secret()
-    assert settings.WEBHOOK_SECRET_LENGTH_START <= \
-        len(computed) <= settings.WEBHOOK_SECRET_LENGTH_STOP
+    assert settings.SECRET_LENGTH_START <= \
+        len(computed) <= settings.SECRET_LENGTH_STOP
 
 
 @pytest.mark.parametrize(

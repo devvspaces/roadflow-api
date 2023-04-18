@@ -1,8 +1,3 @@
-from utils.base.email import render_email_message
-from account.models import Profile, User
-from django.shortcuts import get_object_or_404
-from django.utils.encoding import force_bytes, force_str
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -10,40 +5,79 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from utils.base.general import custom_auto_schema, get_tokens_for_user, random_otp
+
+from account.models import User
+from utils.base.general import get_tokens_for_user
 
 from . import serializers
+from .utils import send_password_reset_email, send_verification_email
 
 
-def send_verification_email(user: User, request):
-    """
-    Sends a verification email to user.
-    """
-    message = render_email_message(
-        request, 'account/email/verify_email.html',
-        {
-            "otp": random_otp()
-        }
-    )
-    return user.email_user('Verify your email', message)
-
-
-class RegisterAPIView(APIView):
+class RegisterAPIView(generics.CreateAPIView):
     """
     Register a new user and
     send a verification email to user.
     """
+    permission_classes = []
     serializer_class = serializers.RegisterSerializer
+
+    @swagger_auto_schema(
+        responses={201: serializers.UserSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
         user_serializer = serializers.UserSerializer(user)
         send_verification_email(user, request)
         return Response(
             data=user_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ValidateRegistrationOtpView(generics.GenericAPIView):
+    """
+    Validate the otp sent to user's email.
+    """
+    permission_classes = []
+    serializer_class = serializers.ValidateRegistrationOtpSerializer
+
+    @swagger_auto_schema(
+        responses={200: serializers.UserSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        user_serializer = serializers.UserSerializer(user)
+        return Response(
+            data=user_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ValidateForgetPasswordOtpView(generics.GenericAPIView):
+    """
+    Validate the forget password otp sent to user's email.
+
+    Return a token to be used for resetting password.
+    """
+    permission_classes = []
+    serializer_class = serializers.ValidateRegistrationOtpSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Create a token for user to reset password
+        # uidb64 and token are used to identify the user
+
+        return Response(
+            data=serializer.data,
             status=status.HTTP_201_CREATED
         )
 
@@ -91,11 +125,11 @@ class TokenRefreshAPIView(APIView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class LoginAPIView(APIView):
+class LoginAPIView(generics.GenericAPIView):
     serializer_class = serializers.LoginSerializer
+    permission_classes = []
 
-    @custom_auto_schema(
-        request_body=serializers.LoginSerializer,
+    @swagger_auto_schema(
         responses={
             200: serializers.LoginResponseSerializer200,
         }
@@ -104,10 +138,9 @@ class LoginAPIView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
-        user = User.objects.get(email=email)
+        user: User = User.objects.get(email=email)
         if user.verified_email:
-            s2 = serializers.UserSerializer(user)
-            user_details = s2.data
+            user_details = serializers.UserSerializer(user).data
             response_data = {
                 'tokens': get_tokens_for_user(user),
                 'user': user_details
@@ -124,6 +157,52 @@ class LoginAPIView(APIView):
 
 class ChangePasswordView(generics.UpdateAPIView):
     serializer_class = serializers.ChangePasswordSerializer
+    http_method_names = ['post']
+
+    def post(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def get_object(self):
+        return self.request.user
+
+    def get_queryset(self):
+        return User.objects.filter(active=True)
+
+
+class RequestForgetPasswordView(generics.GenericAPIView):
+    serializer_class = serializers.RequestForgetPasswordSerializer
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        send_password_reset_email(serializer.user, request)
+        return Response(data=serializer.data)
+
+
+class ForgetPasswordView(generics.GenericAPIView):
+    serializer_class = serializers.ForgetPasswordSerializer
+    permission_classes = []
+
+    @swagger_auto_schema(
+        responses={
+            200: serializers.LoginResponseSerializer200,
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user: User = serializer.validated_data.get('user')
+        user_details = serializers.UserSerializer(user).data
+        response_data = {
+            'tokens': get_tokens_for_user(user),
+            'user': user_details
+        }
+        return Response(data=response_data)
+
+
+class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = serializers.UserSerializer
 
     def get_object(self):
         return self.request.user

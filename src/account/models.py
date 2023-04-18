@@ -1,17 +1,19 @@
-from typing import TypeVar
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
-from utils.base.general import send_email
-from utils.base.validators import validate_special_char, validate_phone
-from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.dispatch import receiver
 
+from utils.base.general import random_otp, send_email
+from utils.base.validators import validate_special_char
+from django.core.cache import cache
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
     def create_base_user(
-        self, email, username, is_active=True,
-        is_staff=False, is_admin=False
+            self, email, username, is_active=True,
+            is_staff=False, is_admin=False
     ) -> AbstractBaseUser:
         if not email:
             raise ValueError("User must provide an email")
@@ -28,8 +30,8 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(
-        self, email, username, password=None, is_active=True,
-        is_staff=False, is_admin=False
+            self, email, username, password=None, is_active=True,
+            is_staff=False, is_admin=False
     ):
         if not password:
             raise ValueError("User must provide a password")
@@ -64,7 +66,6 @@ must not contain special characters"
     active = models.BooleanField(default=True)
     staff = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now=True)
     verified_email = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -73,19 +74,25 @@ must not contain special characters"
 
     objects = UserManager()
 
-    def has_perm(self, perm, obj=None):
+    def has_perm(self, perm, obj=None):  # pragma: no cover
         return True
 
-    def has_module_perms(self, app_label):
+    def has_module_perms(self, app_label):  # pragma: no cover
         return True
-
-    @property
-    def get_emailname(self) -> str:
-        """Return the x part of an email e.g [x]@gmail.com"""
-        return self.email.split('@')[0]
 
     def __str__(self) -> str:
         return self.username
+
+    def set_otp(self):
+        otp = random_otp()
+        cache.set(f"otp_{self.pk}", otp, timeout=settings.OTP_CACHE_TIMEOUT)
+        return otp
+
+    def validate_otp(self, otp):
+        valid = cache.get(f"otp_{self.pk}") == otp
+        if valid:
+            cache.delete(f"otp_{self.pk}")
+        return valid
 
     def email_user(self, subject, message):
         val = send_email(subject=subject, message=message, email=self.email)
@@ -102,6 +109,10 @@ must not contain special characters"
     @property
     def is_admin(self) -> bool:
         return self.admin
+
+    @property
+    def is_personnel(self) -> bool:
+        return self.staff or self.admin
 
 
 class Skill(models.Model):

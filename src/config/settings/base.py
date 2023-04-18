@@ -29,7 +29,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'utils.base.permissions.IsAuthenticated',
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -45,6 +45,21 @@ REST_FRAMEWORK = {
     ),
 }
 
+SWAGGER_SETTINGS = {
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'utils.base.schema.BaseSchema',
+    "SECURITY_DEFINITIONS": {
+        "JWT [Bearer {TOKEN}]": {
+            "name": "Authorization",
+            "type": "apiKey",
+            "in": "header",
+        },
+        "Basic": {
+            "type": "basic",
+            "name": "Authorization",
+        }
+    },
+    "USE_SESSION_AUTH": False,
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -209,3 +224,10 @@ OFF_EMAIL = True
 MAX_IMAGE_UPLOAD_SIZE = 2621440  # 2.5MB
 
 APP_NAME = 'RoadFlow'
+
+USERNAME_PREFIX = 'roadflow'
+
+SECRET_LENGTH_START = 32
+SECRET_LENGTH_STOP = 64
+
+OTP_CACHE_TIMEOUT = 30 * 60  # 30 minutes

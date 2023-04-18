@@ -324,32 +324,11 @@ def get_random_secret() -> str:
     :rtype: str
     """
     length = get_randint_range(
-        settings.WEBHOOK_SECRET_LENGTH_START,
-        settings.WEBHOOK_SECRET_LENGTH_STOP
+        settings.SECRET_LENGTH_START,
+        settings.SECRET_LENGTH_STOP
     )
     allowed_chars = RANDOM_STRING_CHARS + '.-_!$;*#@'
     return get_random_string(length, allowed_chars)
-
-
-def get_usable_name(profile, name: str = None) -> str:
-    """
-    Get a unique username for newly created users
-
-    :param profile: Profile model
-    :type profile: authentication.models.Profile
-    :param name: last generated username, defaults to None
-    :type name: str, optional
-    :return: unique username
-    :rtype: str
-    """
-    if not name:
-        name = username_gen(5)
-
-    # Check if the name exists in the Profile table
-    exists = profile.objects.filter(username=name).exists()
-    if exists:
-        return get_usable_name(profile, username_gen(5))
-    return name
 
 
 @contextmanager
