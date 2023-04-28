@@ -1,17 +1,45 @@
 from django.conf import settings
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
-from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.password_validation import validate_password
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
-from account.api.base.tokens import TokenGenerator
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from account.api.base.tokens import TokenGenerator
 from account.models import Profile, User
+from utils.base.general import get_access_time
 
 
 class JWTTokenValidateSerializer(serializers.Serializer):
     token = serializers.CharField()
+
+
+class TokenRefreshSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        help_text=f"Refresh token will be used to generate new \
+access token every {settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']} minutes ",
+        write_only=True, required=True
+    )
+    access = serializers.ReadOnlyField()
+    access_expires_at = serializers.IntegerField(
+        help_text='Access token expires at',
+        read_only=True
+    )
+
+    def validate(self, attrs):
+        refresh = RefreshToken(attrs['refresh'])
+
+        data = {'access': str(refresh.access_token)}
+        api_settings = getattr(settings, 'SIMPLE_JWT', None)
+
+        if not api_settings:
+            raise Exception('SIMPLE_JWT settings not found')
+
+        # Get the access token lifetime
+        data['access_expires_at'] = get_access_time()
+        return data
 
 
 class JWTTokenResponseSerializer(serializers.Serializer):
@@ -20,6 +48,10 @@ class JWTTokenResponseSerializer(serializers.Serializer):
 access token every {settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']} minutes ")
     access = serializers.CharField(
         help_text='Used in headers to authenticate users')
+    refresh_expires_at = serializers.IntegerField(
+        help_text='Refresh token expires at')
+    access_expires_at = serializers.IntegerField(
+        help_text='Access token expires at')
 
 
 class TokenGenerateSerializer(serializers.Serializer):
@@ -34,7 +66,6 @@ class TokenGenerateSerializerEmail(serializers.Serializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, required=True, validators=[validate_password])
-    username = serializers.CharField(required=True)
 
     class Meta:
         model = User
@@ -65,7 +96,9 @@ class ValidateOtpSerializer(serializers.Serializer):
         user: User = attrs['email']
 
         if not user.validate_otp(otp):
-            raise serializers.ValidationError('Invalid OTP')
+            raise serializers.ValidationError({
+                'otp': 'Invalid otp'
+            })
 
         return attrs
 

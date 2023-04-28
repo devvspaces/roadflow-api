@@ -22,7 +22,7 @@ def send_verification_email(user: User, request):
 
     return send_otp_email(
         user, request,
-        'account/email/verify.html', 'Verify your email')
+        'account/email/verify_email.html', 'Verify your email')
 
 
 def send_password_reset_email(user: User, request):

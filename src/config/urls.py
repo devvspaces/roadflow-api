@@ -29,6 +29,7 @@ urlpatterns = [
     ),
     path('api/v1/', include([
         path('account/', include('account.api.base.urls')),
+        path('curriculum/', include('Curriculum.api.base.urls')),
     ])),
 ]
 

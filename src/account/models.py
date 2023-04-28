@@ -90,6 +90,9 @@ must not contain special characters"
 
     def validate_otp(self, otp):
         valid = cache.get(f"otp_{self.pk}") == otp
+        if settings.DEBUG:
+            if otp == settings.DEFAULT_OTP:
+                valid = True
         if valid:
             cache.delete(f"otp_{self.pk}")
         return valid

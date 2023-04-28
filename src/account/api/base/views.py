@@ -1,15 +1,11 @@
-from base64 import urlsafe_b64encode
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from account.api.base.tokens import TokenGenerator
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 
+from account.api.base.tokens import TokenGenerator
 from account.models import User
 from utils.base.general import get_tokens_for_user
 
@@ -64,38 +60,10 @@ class ValidateRegistrationOtpView(generics.GenericAPIView):
         )
 
 
-class TokenVerifyAPIView(APIView):
-    """
-    An authentication plugin that checks if a jwt
-    access token is still valid and returns the user info.
-    """
+class TokenRefreshAPIView(generics.GenericAPIView):
+    serializer_class = serializers.TokenRefreshSerializer
+    permission_classes = []
 
-    @swagger_auto_schema(
-        request_body=serializers.JWTTokenValidateSerializer,
-        responses={200: serializers.UserSerializer}
-    )
-    def post(self, request, format=None):
-        jwt_auth = JWTAuthentication()
-
-        raw_token = request.data.get('token')
-
-        validated_token = jwt_auth.get_validated_token(raw_token)
-
-        user = jwt_auth.get_user(validated_token)
-
-        serialized_user = serializers.UserSerializer(user)
-        user_details = serialized_user.data
-
-        return Response(data=user_details)
-
-
-class TokenRefreshAPIView(APIView):
-    serializer_class = TokenRefreshSerializer
-
-    @swagger_auto_schema(
-        request_body=TokenRefreshSerializer,
-        responses={200: TokenRefreshSerializer}
-    )
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
 

@@ -115,6 +115,10 @@ def convert_list_to_choices(array=None) -> list:
     return choices
 
 
+def get_access_time():
+    return settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
+
+
 def get_tokens_for_user(user) -> dict:
     """
     Get jwt tokens for user
@@ -126,9 +130,12 @@ def get_tokens_for_user(user) -> dict:
     """
 
     refresh = RefreshToken.for_user(user)
+    refresh_exp = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
+        'refresh_expires_at': refresh_exp.total_seconds(),
+        'access_expires_at': get_access_time(),
     }
 
 
