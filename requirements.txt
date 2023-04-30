@@ -23,6 +23,7 @@ djangorestframework-simplejwt==4.8.0
 drf-yasg==1.20.0
 execnet==1.9.0
 flake8==6.0.0
+greenlet==2.0.2
 hiredis==2.0.0
 idna==3.3
 inflection==0.5.1
@@ -31,9 +32,13 @@ itypes==1.2.0
 Jinja2==3.0.1
 MarkupSafe==2.0.1
 mccabe==0.7.0
+mindsdb-sdk==1.0.2
+mindsdb-sql==0.5.1
 model-bakery==1.7.0
+numpy==1.24.3
 openapi-codec==1.3.2
 packaging==21.0
+pandas==1.3.5
 Pillow==8.4.0
 pluggy==1.0.0
 psycopg2-binary==2.9.3
@@ -51,6 +56,7 @@ pytest-forked==1.4.0
 pytest-lazy-fixture==0.6.3
 pytest-mock==3.10.0
 pytest-xdist==2.5.0
+python-dateutil==2.8.2
 python-decouple==3.6
 pytz==2021.3
 redis==4.3.1
@@ -59,6 +65,8 @@ ruamel.yaml==0.17.16
 ruamel.yaml.clib==0.2.6
 simplejson==3.17.5
 six==1.16.0
+sly==0.5
+SQLAlchemy==1.4.47
 sqlparse==0.4.2
 tomli==2.0.1
 typing-extensions==3.10.0.2
