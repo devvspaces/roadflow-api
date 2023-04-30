@@ -100,7 +100,8 @@ class LoginAPIView(generics.GenericAPIView):
         send_verification_email(user, request)
         return Response(
             data={
-                "message": 'Please verify your email first.'
+                "email": ['Please verify your email first.'],
+                "euid": "email_not_verified"
             }, status=status.HTTP_400_BAD_REQUEST
         )
 

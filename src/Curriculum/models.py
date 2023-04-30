@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils.text import slugify
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from Curriculum.managers import SyllabiProgressManager
+from utils.base.general import get_unique_slug
 
 
 class Curriculum(models.Model):
@@ -15,7 +18,8 @@ class Curriculum(models.Model):
 
     name = models.CharField(max_length=255, null=False,
                             blank=False, unique=True)
-    slug = models.SlugField(max_length=255, null=True, blank=True)
+    slug = models.SlugField(max_length=255, null=True,
+                            blank=True, editable=False, unique=True)
     description = models.TextField(null=False, blank=False)
     objective = models.TextField(null=False, blank=False)
     prerequisites = models.TextField(null=False, blank=False)
@@ -24,10 +28,25 @@ class Curriculum(models.Model):
         choices=DIFFICULTY, max_length=1, null=False, blank=False)
     resources = models.ManyToManyField('Resource.Resource', blank=True)
     rating = models.FloatField(default=0.0)
+    ratings = models.IntegerField(default=0)
+
+    def get_syllabus(self) -> models.QuerySet['CurriculumSyllabi']:
+        return self.curriculumsyllabi_set.all()
+
+    @property
+    def syllabus(self) -> models.QuerySet['CurriculumSyllabi']:
+        return self.get_syllabus()
+
+    def get_next_order(self):
+        last = self.get_syllabus().last()
+        if last:
+            return last.order + 1
+        return 1
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
-        super(Curriculum, self).save(*args, **kwargs)
+        if not self.id:
+            self.slug = get_unique_slug(self.name, self)
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.name
@@ -38,14 +57,29 @@ class CurriculumSyllabi(models.Model):
 
     curriculum = models.ForeignKey(
         Curriculum, on_delete=models.CASCADE)
-    order = models.IntegerField(default=0)
+    order = models.IntegerField(default=0, editable=False)
     title = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=255, null=True, blank=True, unique=True)
+    slug = models.SlugField(max_length=255, null=True,
+                            blank=True, unique=True, editable=False)
     description = models.TextField(null=False, blank=False)
 
+    @property
+    def topics(self):
+        return self.get_topics()
+
+    def get_topics(self) -> models.QuerySet['SyllabiTopic']:
+        return self.syllabitopic_set.all()
+
+    def get_next_order(self):
+        last = self.get_topics().last()
+        if last:
+            return last.order + 1
+        return 1
+
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.title)
-        super(CurriculumSyllabi, self).save(*args, **kwargs)
+        if not self.id:
+            self.slug = get_unique_slug(self.title, self)
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.title
@@ -59,15 +93,18 @@ class SyllabiTopic(models.Model):
 
     syllabi = models.ForeignKey(
         CurriculumSyllabi, on_delete=models.CASCADE)
-    order = models.IntegerField(default=0)
-    title = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=255, null=True, blank=True, unique=True)
+    order = models.IntegerField(default=0, editable=False)
+    title = models.CharField(max_length=255, null=False,
+                             blank=False)
+    slug = models.SlugField(max_length=255, null=True,
+                            blank=True, unique=True, editable=False)
     description = models.TextField(null=False, blank=False)
     resources = models.ManyToManyField('Resource.Resource', blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.title)
-        super(SyllabiTopic, self).save(*args, **kwargs)
+        if not self.id:
+            self.slug = get_unique_slug(self.title, self)
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.title
@@ -106,6 +143,7 @@ class SyllabiProgress(models.Model):
         SyllabiTopic, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    objects = SyllabiProgressManager()
 
 
 class CurriculumReview(models.Model):
@@ -140,3 +178,15 @@ class CurriculumReview(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.email} - {self.curriculum.name}"
+
+
+@receiver(pre_save, sender=CurriculumSyllabi)
+def set_syllabi_order(sender, instance, **kwargs):
+    if not instance.id and instance.order != 0:
+        instance.order = instance.curriculum.get_next_order()
+
+
+@receiver(pre_save, sender=SyllabiTopic)
+def set_topic_order(sender, instance, **kwargs):
+    if not instance.id and instance.order != 0:
+        instance.order = instance.syllabi.get_next_order()

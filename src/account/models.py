@@ -1,8 +1,9 @@
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from Curriculum.models import Curriculum, CurriculumEnrollment
 
 from utils.base.general import random_otp, send_email
 from utils.base.validators import validate_special_char
@@ -100,6 +101,39 @@ must not contain special characters"
     def email_user(self, subject, message):
         val = send_email(subject=subject, message=message, email=self.email)
         return True if val else False
+
+    def get_curriculum_enrollments(self):
+        """
+        Get the curriculums this user
+        is enrolled.
+        """
+        return self.curriculumenrollment_set.all()
+
+    def get_curriculum_enrollment(self, curriculum):
+        return self.get_curriculum_enrollments()\
+            .get(curriculum=curriculum)
+
+    def has_enrolled_curriculum(self, curriculum):
+        try:
+            self.get_curriculum_enrollment(curriculum)
+        except CurriculumEnrollment.DoesNotExist:
+            return False
+        return True
+
+    @transaction.atomic
+    def enroll_curriculum(self, curriculum: Curriculum):
+        enrollment = self.curriculumenrollment_set.create(
+            curriculum=curriculum,
+        )
+
+        for syllabi in curriculum.syllabus:
+            for topic in syllabi.get_topics():
+                enrollment.syllabiprogress_set.create(
+                    syllabi=syllabi,
+                    topic=topic
+                )
+
+        return enrollment
 
     @property
     def is_active(self) -> bool:

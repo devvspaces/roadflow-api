@@ -7,12 +7,13 @@ from contextlib import contextmanager
 from functools import reduce
 from io import StringIO
 from typing import Callable, Generator, List
+from django.db import models
+from django.utils.text import slugify
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models.query import QuerySet
-from django.template.defaultfilters import slugify
 from django.utils.crypto import RANDOM_STRING_CHARS, get_random_string
 from django.utils.encoding import force_bytes
 from drf_yasg.openapi import Schema
@@ -315,6 +316,22 @@ def username_gen(n: int) -> str:
     :rtype: str
     """
     return settings.USERNAME_PREFIX + get_random_string(n)
+
+
+def get_unique_slug(text: string, instance) -> str:
+    """
+    Get a unique slug for a model instance
+
+    :param text: base text to slugify
+    :type text: string
+    :param instance: model instance
+    :return: new unique slug
+    :rtype: str
+    """
+    slug = f"{slugify(text)}-{random_text()}"
+    if instance.__class__.objects.filter(slug=slug).exists():
+        return get_unique_slug(text, instance)
+    return slug
 
 
 def get_randint_range(start, stop) -> int:
