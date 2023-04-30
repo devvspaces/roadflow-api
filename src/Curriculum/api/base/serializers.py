@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
-from Curriculum.models import (Curriculum, CurriculumSyllabi, SyllabiProgress,
+from Curriculum.models import (Curriculum, CurriculumEnrollment, CurriculumReview,
+                               CurriculumSyllabi, SyllabiProgress,
                                SyllabiTopic)
+from Quiz.models import QOption, Quiz
 from Resource.models import Resource
 
 
@@ -38,6 +40,12 @@ class CurriculumSyllabiSerializer(serializers.ModelSerializer):
         return [topic.title for topic in topics]
 
 
+class CurriculumSyllabiWithoutTOSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurriculumSyllabi
+        exclude = []
+
+
 class SearchQuerySerializer(serializers.Serializer):
     search = serializers.CharField(
         required=False, allow_blank=True, max_length=255
@@ -72,8 +80,15 @@ class EnrolledSingleCurriculumSerializer(CurriculumSerializer):
             data = CurriculumSyllabiSerializer(instance=syllabi).data
             data['completed'] = completed
             syllabus.append(data)
-
         return syllabus
+
+
+class CurriculumWithResourcesSerializer(EnrolledSingleCurriculumSerializer):
+    resources = ResourceSerializer(many=True)
+
+    class Meta:
+        model = Curriculum
+        exclude = []
 
 
 class SyllabiProgressSerializer(serializers.ModelSerializer):
@@ -83,6 +98,16 @@ class SyllabiProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = SyllabiProgress
         exclude = ["enrollment"]
+
+
+class SyllabiProgressWithoutTopicSerializer(SyllabiProgressSerializer):
+    syllabi = CurriculumSyllabiWithoutTOSerializer()
+    topic = SyllabiTopicSerializer()
+
+
+class SPWTCRSerializer(serializers.Serializer):
+    curriculum = EnrolledSingleCurriculumSerializer()
+    progress = SyllabiProgressWithoutTopicSerializer(many=True)
 
 
 class CurriculumEnrollSerializer(serializers.Serializer):
@@ -122,3 +147,60 @@ class CheckEnrolledSerializer(serializers.Serializer):
                 "Curriculum does not exist")
 
         return curriculum
+
+
+class CurriculumEnrollmentSerializer(serializers.ModelSerializer):
+    completed_weeks = serializers.IntegerField()
+    curriculum = CurriculumSerializer()
+
+    class Meta:
+        model = CurriculumEnrollment
+        exclude = ["user"]
+
+
+class QOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QOption
+        exclude = ['quiz']
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    options = QOptionSerializer(many=True)
+
+    class Meta:
+        model = Quiz
+        exclude = ['topic']
+
+
+class TopicQuizSerializer(serializers.ModelSerializer):
+    quiz = QuizSerializer(many=True)
+
+    class Meta:
+        model = SyllabiTopic
+        fields = ['quiz']
+
+
+class SubmitQuizOptionSerializer(serializers.Serializer):
+    key = serializers.CharField(help_text="Quiz id => Option id")
+
+
+class SubmitQuizOptionResponseSerializer(serializers.Serializer):
+    selected = serializers.CharField(help_text="Option id")
+    is_correct = serializers.BooleanField()
+    reason = serializers.CharField()
+
+
+class SubmitQuizResponseSerializer(serializers.Serializer):
+    key = SubmitQuizOptionResponseSerializer()
+
+
+class SubmitQuizMarkResponseSerializer(serializers.Serializer):
+    quiz = SubmitQuizResponseSerializer(many=True)
+    mark = serializers.IntegerField(help_text="In percentage")
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CurriculumReview
+        fields = ["rating", "review"]

@@ -21,3 +21,7 @@ class SyllabiProgressManager(Manager):
 
     def get_by_enrollment_topic(self, enrollment, topic):
         return self.get_queryset().get_by_enrollment_topic(enrollment, topic)
+
+    def get_by_user_and_topic(self, user, topic_slug):
+        qset = self.get_queryset()
+        return qset.get(enrollment__user=user, topic__slug__exact=topic_slug)

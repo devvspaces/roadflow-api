@@ -1,9 +1,13 @@
-from django.db import models
+from functools import reduce
+
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+
 from Curriculum.managers import SyllabiProgressManager
+from Quiz.models import Quiz
 from utils.base.general import get_unique_slug
 
 
@@ -19,7 +23,7 @@ class Curriculum(models.Model):
     name = models.CharField(max_length=255, null=False,
                             blank=False, unique=True)
     slug = models.SlugField(max_length=255, null=True,
-                            blank=True, editable=False, unique=True)
+                            blank=True, unique=True)
     description = models.TextField(null=False, blank=False)
     objective = models.TextField(null=False, blank=False)
     prerequisites = models.TextField(null=False, blank=False)
@@ -57,10 +61,10 @@ class CurriculumSyllabi(models.Model):
 
     curriculum = models.ForeignKey(
         Curriculum, on_delete=models.CASCADE)
-    order = models.IntegerField(default=0, editable=False)
+    order = models.IntegerField(default=0)
     title = models.CharField(max_length=255, null=False, blank=False)
     slug = models.SlugField(max_length=255, null=True,
-                            blank=True, unique=True, editable=False)
+                            blank=True, unique=True)
     description = models.TextField(null=False, blank=False)
 
     @property
@@ -93,13 +97,20 @@ class SyllabiTopic(models.Model):
 
     syllabi = models.ForeignKey(
         CurriculumSyllabi, on_delete=models.CASCADE)
-    order = models.IntegerField(default=0, editable=False)
+    order = models.IntegerField(default=0)
     title = models.CharField(max_length=255, null=False,
                              blank=False)
     slug = models.SlugField(max_length=255, null=True,
-                            blank=True, unique=True, editable=False)
+                            blank=True, unique=True)
     description = models.TextField(null=False, blank=False)
     resources = models.ManyToManyField('Resource.Resource', blank=True)
+
+    def get_quizzes(self) -> models.QuerySet[Quiz]:
+        return self.quiz_set.all()
+
+    @property
+    def quiz(self):
+        return self.get_quizzes()
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -128,6 +139,20 @@ class CurriculumEnrollment(models.Model):
     )
     completed = models.BooleanField(default=False)
 
+    @property
+    def completed_weeks(self):
+        syllabus = self.curriculum.get_syllabus()
+
+        def count(prev: int, syllabi: CurriculumSyllabi):
+            """
+            Count completed syllabus
+            """
+            is_completed = SyllabiProgress.objects.syllabi_completed(
+                self, syllabi
+            )
+            return prev + 1 if is_completed else prev
+        return reduce(count, syllabus, 0)
+
     def __str__(self) -> str:
         return f"{self.user.email} - {self.curriculum.name}"
 
@@ -143,6 +168,8 @@ class SyllabiProgress(models.Model):
         SyllabiTopic, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    quiz_mark = models.PositiveIntegerField(default=0)
+    last_attempted = models.DateTimeField(null=True)
     objects = SyllabiProgressManager()
 
 
@@ -150,9 +177,9 @@ class CurriculumReview(models.Model):
     """Curriculum Review Model"""
 
     SENTIMENT = (
-        ('P', 'Positive'),
-        ('N', 'Negative'),
-        ('N', 'Neutral'),
+        ('POS', 'Positive'),
+        ('NEG', 'Negative'),
+        ('NEU', 'Neutral'),
     )
 
     LABEL = (
@@ -172,21 +199,21 @@ class CurriculumReview(models.Model):
     review = models.TextField(null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    sentiment = models.CharField(max_length=255, null=True, blank=True)
+    sentiment = models.CharField(
+        max_length=3, null=True, blank=True,
+        choices=SENTIMENT
+    )
     label = models.CharField(
         max_length=1, choices=LABEL, null=True, blank=True)
-
-    def __str__(self) -> str:
-        return f"{self.user.email} - {self.curriculum.name}"
 
 
 @receiver(pre_save, sender=CurriculumSyllabi)
 def set_syllabi_order(sender, instance, **kwargs):
-    if not instance.id and instance.order != 0:
+    if not instance.id and instance.order == 0:
         instance.order = instance.curriculum.get_next_order()
 
 
 @receiver(pre_save, sender=SyllabiTopic)
 def set_topic_order(sender, instance, **kwargs):
-    if not instance.id and instance.order != 0:
+    if not instance.id and instance.order == 0:
         instance.order = instance.syllabi.get_next_order()
