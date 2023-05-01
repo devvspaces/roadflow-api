@@ -1,6 +1,6 @@
 from .base import *  # noqa
 
-ALLOWED_HOSTS = ['staging.domain']
+ALLOWED_HOSTS = ['roadflow.tripvalue.com.ng']
 
 STATIC_ROOT = BASE_DIR / "static"  # noqa
 
