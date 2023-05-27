@@ -2,6 +2,8 @@ from typing import Dict
 
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -10,6 +12,7 @@ from Curriculum.models import Curriculum, SyllabiProgress, SyllabiTopic
 from Quiz.models import QOption, Quiz
 from utils.base.date import dt_now
 from utils.base.mindsdb import classify_text, sentiment_text
+from utils.base.showwcase import show_get
 
 from . import serializers
 
@@ -118,6 +121,45 @@ class GetTopicQuiz(generics.RetrieveAPIView):
     serializer_class = serializers.TopicQuizSerializer
     lookup_field = "slug"
 
+    def get_quiz_mark(self):
+        """
+        Get the mark of the quiz if it exists
+        """
+        try:
+            syllabi_progress: SyllabiProgress = SyllabiProgress.objects\
+                .get_by_user_and_topic(
+                    self.request.user, self.kwargs.get(self.lookup_field)
+                )
+        except SyllabiProgress.DoesNotExist:
+            return HttpResponseNotFound("Quiz does not exists")
+
+        rem_time = 0
+        if syllabi_progress.last_attempted:
+            rem_time = (
+                dt_now() - syllabi_progress.last_attempted).seconds
+            rem_time = settings.TEST_INTERVAL_SECONDS - rem_time
+
+        return {
+            "completed": syllabi_progress.completed,
+            "mark": syllabi_progress.quiz_mark,
+            "remaining_time": max(rem_time, 0)
+        }
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        quiz_mark = self.get_quiz_mark()
+        if isinstance(quiz_mark, HttpResponseNotFound):
+            return quiz_mark
+
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(
+            instance, context={
+                "request": request,
+                "quiz_mark": quiz_mark
+            }
+        )
+        return Response(serializer.data)
+
     def get_queryset(self):
         return SyllabiTopic.objects.all()
 
@@ -139,6 +181,7 @@ class SubmitTopicQuiz(generics.GenericAPIView):
 
         if syllabi_progress.last_attempted:
             diff = dt_now() - syllabi_progress.last_attempted
+            print(diff.total_seconds())
             if (diff.total_seconds() < settings.TEST_INTERVAL_SECONDS):
                 return Response("Time interval for \
 test retake not reached", status=status.HTTP_400_BAD_REQUEST)
@@ -199,7 +242,8 @@ test retake not reached", status=status.HTTP_400_BAD_REQUEST)
 
         data = {
             "quiz": quiz_response,
-            "mark": syllabi_progress.quiz_mark
+            "mark": syllabi_progress.quiz_mark,
+            "remaining_time": settings.TEST_INTERVAL_SECONDS
         }
         return Response(data)
 
@@ -301,3 +345,33 @@ class RateCurriculum(generics.CreateAPIView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class GetUpcomingEvents(generics.ListAPIView):
+    serializer_class = serializers.EventSerializer
+    permission_classes = []
+
+    def get_queryset(self):
+        results = show_get("/events/upcoming")
+        if not results:
+            results = []
+
+        def _mapper(data):
+            return {
+                "title": data.get("name"),
+                "start": data.get("start_date"),
+                "end": data.get("end_date"),
+                "url": data.get("project").get("_self"),
+                "upvotes": data.get("project").get("totalUpvotes"),
+                "views": data.get("project").get("totalViews"),
+                "reading_time": data.get("project")
+                .get("readingStats").get("text"),
+                "image": data.get("project").get("coverImageUrl"),
+                "projectSummary": data.get("project").get("projectSummary"),
+            }
+
+        return list(map(_mapper, results))
+
+    @method_decorator(cache_page(settings.SHOWWCASE_API_CACHE_TIME))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

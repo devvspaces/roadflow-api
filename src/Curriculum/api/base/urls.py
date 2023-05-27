@@ -6,6 +6,10 @@ app_name = 'curriculum'
 urlpatterns = [
     path('', views.CurriculumList.as_view(), name='list-curriculum'),
     path(
+        'upcoming-events/',
+        views.GetUpcomingEvents.as_view(),
+        name='upcoming-events'),
+    path(
         'enrolled/', views.GetEnrolledCurriculums.as_view(),
         name='get-enrolled-curriculums'),
     path(

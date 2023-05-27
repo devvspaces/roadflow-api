@@ -5,6 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from sqlalchemy import all_
 
 from Curriculum.managers import SyllabiProgressManager
 from Quiz.models import Quiz
@@ -217,3 +218,15 @@ def set_syllabi_order(sender, instance, **kwargs):
 def set_topic_order(sender, instance, **kwargs):
     if not instance.id and instance.order == 0:
         instance.order = instance.syllabi.get_next_order()
+
+
+@receiver(pre_save, sender=SyllabiProgress)
+def set_enrollment_progress(sender, instance: SyllabiProgress, **kwargs):
+    enrollment = instance.enrollment
+    all_syllabi = SyllabiProgress.objects.filter(
+        enrollment=enrollment
+    )
+    completed_syllabi = all_syllabi.filter(completed=True)
+    enrollment.progress = round(
+        (completed_syllabi.count() / all_syllabi.count()) * 100, 2)
+    enrollment.save()

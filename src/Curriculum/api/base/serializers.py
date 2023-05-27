@@ -174,10 +174,25 @@ class QuizSerializer(serializers.ModelSerializer):
 
 class TopicQuizSerializer(serializers.ModelSerializer):
     quiz = QuizSerializer(many=True)
+    mark = serializers.SerializerMethodField()
+    remaining_time = serializers.SerializerMethodField()
+    completed = serializers.SerializerMethodField()
 
     class Meta:
         model = SyllabiTopic
-        fields = ['quiz']
+        fields = ['quiz', 'mark', 'remaining_time', 'completed']
+
+    def get_mark(self, obj):
+        obj = self.context.get("quiz_mark")
+        return obj.get('mark')
+
+    def get_remaining_time(self, obj):
+        obj = self.context.get("quiz_mark")
+        return obj.get('remaining_time')
+
+    def get_completed(self, obj):
+        obj = self.context.get("quiz_mark")
+        return obj.get('completed')
 
 
 class SubmitQuizOptionSerializer(serializers.Serializer):
@@ -197,6 +212,7 @@ class SubmitQuizResponseSerializer(serializers.Serializer):
 class SubmitQuizMarkResponseSerializer(serializers.Serializer):
     quiz = SubmitQuizResponseSerializer(many=True)
     mark = serializers.IntegerField(help_text="In percentage")
+    remaining_time = serializers.IntegerField(help_text="In seconds")
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -204,3 +220,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = CurriculumReview
         fields = ["rating", "review"]
+
+
+class EventSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    url = serializers.CharField()
+    upvotes = serializers.IntegerField()
+    views = serializers.IntegerField()
+    reading_time = serializers.CharField()
+    image = serializers.URLField()
+    projectSummary = serializers.CharField()
