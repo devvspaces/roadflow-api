@@ -14,7 +14,7 @@ Here is a link to the [Github Project](https://github.com/users/devvspaces/proje
 
 Here is a db diagram for the project database - [Diagram](https://dbdiagram.io/d/6437cb1c8615191cfa8d9bc1)
 
-![](./Roadflow%20DB.png)
+![](./RoadflowDB.png)
 
 ## Prerequisites
 
@@ -80,6 +80,14 @@ A step by step series of examples that tell you how to get a development environ
 
 > The site is configured to run with SQLite but you can configure it to use postgress in production.
 
+## Running Tests
+
+Pytest is heavily used for testing. To run tests, make sure you are in the `src` directory before you run the command below.
+
+```bash
+pytest
+```
+
 ## Running the API
 
 To run the API on your machine. Make sure you are in the `src` directory before you run the command below.
@@ -89,6 +97,10 @@ python manage.py runserver
 ```
 
 API server will run on `http://localhost:8000/`. Visit [Swagger](http://localhost:8000/docs/) to read the Swagger API documentation.
+
+## Deployment
+
+Check out the deployment guide at [Deployment](./docs/DEPLOYMENT.md)
 
 ## ⛏️ Built Using
 

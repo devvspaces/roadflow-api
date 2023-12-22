@@ -64,12 +64,7 @@ redis==4.3.1
 requests==2.27.1
 ruamel.yaml==0.17.16
 ruamel.yaml.clib==0.2.6
-simplejson==3.17.5
 six==1.16.0
-sly==0.5
-SQLAlchemy==1.4.47
-sqlparse==0.4.2
-tomli==2.0.1
 typing-extensions==3.10.0.2
 tzdata==2022.1
 uritemplate==3.0.1
