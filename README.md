@@ -2,6 +2,25 @@
 
 This is the backend api for RoadFlow. It uses DRF for api development and MindsDB NLP Models for user reviews classification and sentiment. The API follows REST API requirements. It can be tested from the Swagger documentation or any client.
 
+## Why Roadflow?
+
+The main reason for embarking on building this project is the understanding that most resources online are great at teaching and also misleading young developers. They focus on teaching core or necessary aspect of development but loose a lot of value due to not being organized for the learner.
+
+Many students have met me trying to understand how they can start programming. I don’t have the time to really direct them. So, I usually direct them to online videos which further confuses them. Not because the videos are not great, but because the learner doesn’t know what comes first, next, or if they following the right path.
+
+### Architecture
+
+Roadflow provides value to users by giving them structured roadmap with organized open source learning resources. Helping them to utilize those online free videos, articles and lectures effectively.
+
+It has two main parts, API and Client. The API is built in Django and the Client which is the frontend is built in NextJs. JWT is used as the main authentication mechanism. Swagger is used for the API documentation.
+
+Users can find courses, enroll in them, engage in projects and quizzes. They can track their progress on every enrolled courses in their dashboard.
+
+### Challenges
+
+1. Knowing the user flow, how the user experience should feel. I used other platforms like Coursera and EDX has case study.
+2. Picking a method that ensures learners understand what they learned. After learning from case studies, I built a quiz system that tests their knowledge on each modules.
+
 ## Figma Design
 
 Here is a link to the [figma](https://www.figma.com/file/4sWAOaXGdd16N5AlyFVSBl/RoadTrack-Project?node-id=10-39&t=J5xBuuZrD2TIcSLZ-0).
@@ -28,7 +47,7 @@ A step by step series of examples that tell you how to get a development environ
 
 > First you have to clone the project on your machine
 
-- Setup virtual enviroment
+- Setup virtual environment
 
     Debian
 
