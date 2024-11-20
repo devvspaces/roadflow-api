@@ -1,12 +1,12 @@
 Code snippets to help in deployment
 
 sudo -u postgres psql
-CREATE DATABASE test_roadflowapi_db1;
-CREATE USER test_roadflowapi_user1 WITH PASSWORD 'test';
-ALTER ROLE test_roadflowapi_user1 SET client_encoding TO 'utf8';
-ALTER ROLE test_roadflowapi_user1 SET default_transaction_isolation TO 'read committed';
-ALTER ROLE test_roadflowapi_user1 SET timezone TO 'UTC';
-GRANT ALL PRIVILEGES ON DATABASE test_roadflowapi_db1 TO test_roadflowapi_user1;
+CREATE DATABASE roadflow;
+CREATE USER admin WITH PASSWORD 'test';
+ALTER ROLE admin SET client_encoding TO 'utf8';
+ALTER ROLE admin SET default_transaction_isolation TO 'read committed';
+ALTER ROLE admin SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE roadflow TO admin;
 \q
 
 =======================================
