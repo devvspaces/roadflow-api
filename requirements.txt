@@ -6,7 +6,7 @@ atomicwrites==1.4.1
 attrs==21.4.0
 autopep8==2.0.2
 certifi==2021.10.8
-cffi==1.15.0
+cffi==1.17.1
 charset-normalizer==2.0.12
 colorama==0.4.5
 coreapi==2.3.3
