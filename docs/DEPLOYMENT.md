@@ -61,11 +61,11 @@ Requires=roadflow.socket
 After=network.target
 
 [Service]
-User=ubuntu
+User=huncho
 Group=www-data
-WorkingDirectory=/home/ubuntu/roadflow-api/src
-ExecStart=/home/ubuntu/roadflow-api/venv/bin/python \
-          /home/ubuntu/roadflow-api/venv/bin/gunicorn \
+WorkingDirectory=/home/huncho/roadflow-api/src
+ExecStart=/home/huncho/roadflow-api/venv/bin/python \
+          /home/huncho/roadflow-api/venv/bin/gunicorn \
           --access-logfile - \
           --workers 3 \
           --bind unix:/run/roadflow.sock \
@@ -93,11 +93,11 @@ WantedBy=multi-user.target
 
 server {
     listen 80;
-    server_name roadflow.tripvalue.com.ng;
+    server_name roadflow.bloombyte.dev;
 
     location = /favicon.ico { access_log off; log_not_found off; }
     location /static/ {
-        root /home/ubuntu/roadflow/src;
+        root /home/huncho/roadflow-api/src;
     }
 
     location / {
@@ -109,4 +109,11 @@ server {
 ln -s /etc/nginx/sites-available/roadflow /etc/nginx/sites-enabled
 
 sudo nginx -t
-sudo systemctl restart nginx
+sudo systemctl reload nginx
+
+
+## Add SSL
+
+sudo apt-get install certbot python3-certbot-nginx
+
+sudo certbot --nginx -d roadflow.bloombyte.dev
