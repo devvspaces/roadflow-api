@@ -152,7 +152,7 @@ if DB_NAME:
             'NAME': DB_NAME,
             'USER': config("DB_USER", default=''),
             'PASSWORD': config("DB_PASSWORD", default=''),
-            'HOST': 'localhost',
+            'HOST': config("DB_HOST", default='localhost'),
         }
     }
 

@@ -1,0 +1,56 @@
+{
+  "curriculum": {
+    "name": "Introduction to Programming",
+    "slug": "introduction-to-programming",
+    "description": "A comprehensive introduction to programming concepts.",
+    "objective": "To equip students with fundamental programming skills.",
+    "prerequisites": "Basic computer literacy.",
+    "enrolled": 100,
+    "difficulty": "B",
+    "rating": 4.5,
+    "ratings": 150,
+    "syllabi": [
+      {
+        "order": 1,
+        "title": "Basics of Python",
+        "slug": "basics-of-python",
+        "description": "Introduction to Python syntax and semantics.",
+        "topics": [
+          {
+            "order": 1,
+            "title": "Variables and Data Types",
+            "slug": "variables-and-data-types",
+            "description": "Understanding variables and data types in Python.",
+            "resources": [
+              {
+                "name": "W3Schools Python Variables",
+                "url": "https://www.w3schools.com/python/python_variables.asp",
+                "description": "W3Schools tutorial on Python variables.",
+                "author": "W3Schools",
+                "rtype": "A",
+                "provider": "W3Schools"
+              }
+            ],
+            "quizzes": [
+              {
+                "question": "What is a variable?",
+                "options": [
+                  {
+                    "option": "A named storage for data.",
+                    "reason": "Correct answer.",
+                    "is_correct": true
+                  },
+                  {
+                    "option": "A type of function.",
+                    "reason": "Incorrect answer.",
+                    "is_correct": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

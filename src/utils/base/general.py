@@ -318,7 +318,7 @@ def username_gen(n: int) -> str:
     return settings.USERNAME_PREFIX + get_random_string(n)
 
 
-def get_unique_slug(text: string, instance) -> str:
+def get_unique_slug(text: str, instance, rand: str = "") -> str:
     """
     Get a unique slug for a model instance
 
@@ -328,9 +328,9 @@ def get_unique_slug(text: string, instance) -> str:
     :return: new unique slug
     :rtype: str
     """
-    slug = f"{slugify(text)}-{random_text()}"
+    slug = f"{slugify(text)}{rand}"
     if instance.__class__.objects.filter(slug=slug).exists():
-        return get_unique_slug(text, instance)
+        return get_unique_slug(text, instance, f'-{random_text()}')
     return slug
 
 
