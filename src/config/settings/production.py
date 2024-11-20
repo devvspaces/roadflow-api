@@ -1,6 +1,6 @@
 from .staging import *  # noqa
 
-ALLOWED_HOSTS = ['live.domain']
+ALLOWED_HOSTS = [config("ALLOWED_HOSTS", default="*")]
 
 
 SIMPLE_JWT = {
