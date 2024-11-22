@@ -1,5 +1,6 @@
 {% load static %}
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -23,7 +24,10 @@
     <nav>
         <div class="container-fluid">
             <div class="navbar">
-                <img src="https://www.python.org/static/img/python-logo.png" alt="">
+                <div>
+                    <img src="https://rf.bloombyte.dev/logo.png" alt="">
+                    <h1>{{ APP_NAME }}</h1>
+                </div>
                 <p class="date">Date: {% now "SHORT_DATE_FORMAT" %}</p>
             </div>
         </div>
@@ -37,10 +41,7 @@
     <footer>
         <div class="container-fluid">
             <p>
-                {{ APP_NAME }} <br>
-                Web <br>
-                Twitter: twitter.com/netrobeweb <br>
-                <a href="{{domain}}">{{domain}}</a>
+                Cheers from <a href="{{domain}}">{{ APP_NAME }}</a> Team <br>
             </p>
         </div>
     </footer>

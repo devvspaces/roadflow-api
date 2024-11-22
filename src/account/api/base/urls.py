@@ -5,6 +5,9 @@ from . import views
 app_name = 'auth'
 urlpatterns = [
     path('login/', views.LoginAPIView.as_view(), name='login'),
+    path('google/', views.LoginWithGoogleView.as_view(), name='google'),
+    path('twitter/', views.LoginWithTwitterView.as_view(), name='twitter'),
+    path('github/', views.LoginWithGithubView.as_view(), name='github'),
     path('register/', views.RegisterAPIView.as_view(), name='register'),
     path(
         'validate-otp/',

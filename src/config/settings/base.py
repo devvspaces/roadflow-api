@@ -4,6 +4,7 @@ from pathlib import Path
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+FIREBASE_CREDENTIALS = BASE_DIR / "ServiceAccount.json"
 
 SECRET_KEY = config('SECRET_KEY')
 ENCRYPTING_KEY = config('ENCRYPTING_KEY')

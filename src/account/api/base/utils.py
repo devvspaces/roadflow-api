@@ -1,6 +1,6 @@
 
 from account.models import User
-from utils.base.email import render_email_message
+from utils.base.emails import render_email_message
 
 
 def send_otp_email(user: User, request, template: str, subject: str):

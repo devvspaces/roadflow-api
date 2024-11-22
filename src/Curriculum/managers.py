@@ -5,6 +5,7 @@ class SyllabiProgressQuery(QuerySet):
 
     def syllabi_completed(self, enrollment, syllabi):
         qset = self.filter(syllabi=syllabi, enrollment=enrollment)
+        print(qset, qset.filter(completed=True))
         completed = qset.filter(completed=True).count()
         return completed == qset.count()
 

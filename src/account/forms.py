@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth import password_validation
-from utils.base.validators import validate_special_char
+
 from utils.base.constants import User
+from utils.base.validators import validate_special_char
 
 
 class UserRegisterForm(forms.ModelForm):
@@ -64,4 +65,5 @@ class UserRegisterForm(forms.ModelForm):
             profile.fullname = self.cleaned_data.get('fullname')
             profile.save()
 
+        return user
         return user

@@ -1,14 +1,14 @@
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.core.cache import cache
 from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from Curriculum.models import Curriculum, CurriculumEnrollment
 
+from Curriculum.models import Curriculum, CurriculumEnrollment
 from utils.base.general import random_otp, send_email
 from utils.base.validators import validate_special_char
-from django.core.cache import cache
-from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -34,11 +34,10 @@ class UserManager(BaseUserManager):
             self, email, username, password=None, is_active=True,
             is_staff=False, is_admin=False
     ):
-        if not password:
-            raise ValueError("User must provide a password")
         user = self.create_base_user(
             email, username, is_active, is_staff, is_admin)
-        user.set_password(password)
+        if password:
+            user.set_password(password)
         user.save()
         return user
 
@@ -179,6 +178,7 @@ class Profile(models.Model):
         max_length=30,
         validators=[validate_special_char],
         blank=True)
+    image = models.URLField(blank=True)
     bio = models.TextField(max_length=1000, blank=True)
     github = models.URLField(blank=True)
     twitter = models.URLField(blank=True)
