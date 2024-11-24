@@ -24,7 +24,6 @@ INSTALLED_APPS = [
 
     'account',
     'Curriculum',
-    'Feedback',
     'Quiz',
     'Resource',
     'RoadMap',

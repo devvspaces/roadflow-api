@@ -4,7 +4,6 @@ from django.db.models import Manager, QuerySet
 class SyllabiProgressQuery(QuerySet):
 
     def syllabi_completed(self):
-        print(self, self.filter(completed=True))
         completed = self.filter(completed=True).count()
         return completed == self.count()
 

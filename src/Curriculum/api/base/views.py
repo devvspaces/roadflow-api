@@ -8,8 +8,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from Curriculum.models import Curriculum, SyllabiProgress, SyllabiTopic
-from Feedback.models import UserFeedback
+from Curriculum.models import (Curriculum, CurriculumReview, SyllabiProgress,
+                               SyllabiTopic)
 from Quiz.models import QOption, Quiz
 from utils.base.date import dt_now
 from utils.base.ml_loader import ModelLoader
@@ -339,10 +339,9 @@ class RateCurriculum(generics.CreateAPIView):
         review = serializer.save(enrollment=enrollment)
 
         # Classify review here, in live app use cron job
-        review.sentiment = UserFeedback.SENTIMENT_REV_LOOKUP[analyze_sentiment(review.review)]
-        review.label = UserFeedback.LABEL_REV_LOOKUP[ModelLoader().predict(review.review)]
+        review.sentiment = CurriculumReview.SENTIMENT_REV_LOOKUP[analyze_sentiment(review.review)]
+        review.label = CurriculumReview.LABEL_REV_LOOKUP[ModelLoader().predict(review.review)]
         
-        print(review.sentiment, review.label)
         review.save()
 
     @swagger_auto_schema(

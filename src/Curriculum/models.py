@@ -164,18 +164,21 @@ class CurriculumReview(models.Model):
     """Curriculum Review Model"""
 
     SENTIMENT = (
-        ("POS", "Positive"),
-        ("NEG", "Negative"),
-        ("NEU", "Neutral"),
+        ('P', 'Positive'),
+        ('NEG', 'Negative'),
+        ('N', 'Neutral'),
     )
+    SENTIMENT_REV_LOOKUP = {v: k for k, v in dict(SENTIMENT).items()}
 
     LABEL = (
-        ("A", "Course Content"),
-        ("B", "Exercises"),
-        ("C", "Course Structure"),
-        ("D", "Learning Experience"),
-        ("E", "Support"),
+        ('A', 'Course Content'),
+        ('B', 'Exercises'),
+        ('C', 'Course Structure'),
+        ('D', 'Learning Experience'),
+        ('E', 'Feature Request'),
+        ('F', 'Improvement'),
     )
+    LABEL_REV_LOOKUP = {v: k for k, v in dict(LABEL).items()}
 
     enrollment = models.ForeignKey(CurriculumEnrollment, on_delete=models.CASCADE)
     rating = models.PositiveSmallIntegerField(

@@ -39,8 +39,23 @@ class SyllabiTopicAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(CurriculumReview)
+class CurriculumReviewAdmin(admin.ModelAdmin):
+    list_filter = [
+        "rating",
+        "sentiment",
+        "label",
+    ]
+    list_display = [
+        "enrollment",
+        "rating",
+        "review",
+        "sentiment",
+        "label",
+    ]
+
+
 admin.site.register([
     CurriculumEnrollment,
     SyllabiProgress,
-    CurriculumReview
 ])
