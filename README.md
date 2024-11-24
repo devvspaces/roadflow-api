@@ -81,12 +81,6 @@ A step by step series of examples that tell you how to get a development environ
 
     This is not required, for it is used to send OTP for account registration. Email sending is disabled by default in development.
 
-    For MINDSDB config:
-
-    Create a [MindsDB](https://mindsdb.com/) account. If you don't have one, sign up for a free account at [cloud.mindsdb.com](http://cloud.mindsdb.com/).
-
-    Set `MINDSDB_SERVER_USERNAME` to your email, and `MINDSDB_SERVER_PASSWORD` to your password.
-
     Redis config:
 
     If you don't have redis installed you can configure `settings/base.py` to use Django Memcache. Cache is used for OTP verification.
