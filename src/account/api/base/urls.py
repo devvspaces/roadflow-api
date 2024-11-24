@@ -9,6 +9,7 @@ urlpatterns = [
     path('twitter/', views.LoginWithTwitterView.as_view(), name='twitter'),
     path('github/', views.LoginWithGithubView.as_view(), name='github'),
     path('register/', views.RegisterAPIView.as_view(), name='register'),
+    path('resend-otp/', views.ResendOTPView.as_view(), name='resend-otp'),
     path(
         'validate-otp/',
         views.ValidateRegistrationOtpView.as_view(), name='validate_otp'),

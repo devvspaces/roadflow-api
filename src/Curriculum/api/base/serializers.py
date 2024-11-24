@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
-from Curriculum.models import (Curriculum, CurriculumEnrollment, CurriculumReview,
-                               CurriculumSyllabi, SyllabiProgress,
-                               SyllabiTopic)
+from Curriculum.models import (Curriculum, CurriculumEnrollment,
+                               CurriculumReview, CurriculumSyllabi,
+                               SyllabiProgress, SyllabiTopic)
 from Quiz.models import QOption, Quiz
 from Resource.models import Resource
 
@@ -71,12 +71,12 @@ class EnrolledSingleCurriculumSerializer(CurriculumSerializer):
     syllabus = serializers.SerializerMethodField()
 
     def get_syllabus(self, obj: Curriculum):
-        enrollment = self.context.get("enrolloment")
+        enrollment = self.context.get("enrollment")
         syllabus = []
 
         for syllabi in obj.get_syllabus():
-            completed = SyllabiProgress.objects.syllabi_completed(
-                enrollment, syllabi)
+            completed = SyllabiProgress.objects.filter(
+                enrollment=enrollment, syllabi=syllabi).syllabi_completed()
             data = CurriculumSyllabiSerializer(instance=syllabi).data
             data['completed'] = completed
             syllabus.append(data)
@@ -227,6 +227,11 @@ class EventSerializer(serializers.Serializer):
     start = serializers.DateTimeField()
     end = serializers.DateTimeField()
     url = serializers.CharField()
+    upvotes = serializers.IntegerField()
+    views = serializers.IntegerField()
+    reading_time = serializers.CharField()
+    image = serializers.URLField()
+    projectSummary = serializers.CharField()
     upvotes = serializers.IntegerField()
     views = serializers.IntegerField()
     reading_time = serializers.CharField()

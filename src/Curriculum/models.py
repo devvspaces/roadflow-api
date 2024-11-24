@@ -132,12 +132,13 @@ class CurriculumEnrollment(models.Model):
     @property
     def completed_weeks(self):
         syllabus = self.curriculum.get_syllabus()
+        progress = SyllabiProgress.objects.filter(enrollment=self)
 
         def count(prev: int, syllabi: CurriculumSyllabi):
             """
             Count completed syllabus
             """
-            is_completed = SyllabiProgress.objects.syllabi_completed(self, syllabi)
+            is_completed = progress.filter(self, syllabi).syllabi_completed()
             return prev + 1 if is_completed else prev
 
         return reduce(count, syllabus, 0)

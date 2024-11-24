@@ -163,11 +163,12 @@ class LoginGithubSerializer(LoginGoogleSerializer):
             user.profile.save()
             return user
 
+
 class LoginTwitterSerializer(LoginGoogleSerializer):
     def save(self) -> User:
         with atomic():
             data = self.validated_data["id_token"]
-            email = data['email']
+            email = data["email"]
 
             try:
                 user = User.objects.get(email=email)
@@ -211,6 +212,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        try:
+            return User.objects.get(email=value)
+        except User.DoesNotExist:
+            return None
+
+
 class ValidateOtpSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     otp = serializers.CharField(required=True)
@@ -225,7 +236,7 @@ class ValidateOtpSerializer(serializers.Serializer):
     def validate(self, attrs):
         otp = attrs["otp"]
         user: User = attrs["email"]
-
+        
         if not user.validate_otp(otp):
             raise serializers.ValidationError({"otp": "Invalid otp"})
 
@@ -237,11 +248,16 @@ class ForgetPasswordTokenSerializer(serializers.Serializer):
     uidb64 = serializers.CharField(required=True)
 
 
+class MessageSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class ValidateRegistrationOtpSerializer(ValidateOtpSerializer):
     def save(self, **kwargs):
         user: User = self.validated_data["email"]
         user.verified_email = True
         user.save()
+        return user
 
 
 class LoginSerializer(serializers.Serializer):

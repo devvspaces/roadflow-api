@@ -9,9 +9,11 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from Curriculum.models import Curriculum, SyllabiProgress, SyllabiTopic
+from Feedback.models import UserFeedback
 from Quiz.models import QOption, Quiz
 from utils.base.date import dt_now
-from utils.base.mindsdb import classify_text, sentiment_text
+from utils.base.ml_loader import ModelLoader
+from utils.base.sentiment import analyze_sentiment
 from utils.base.showwcase import show_get
 
 from . import serializers
@@ -50,7 +52,7 @@ class EnrolledSingleCurriculum(generics.RetrieveAPIView):
         data = super().get_serializer_context()
         return {
             **data,
-            "enrolloment": self.request.user
+            "enrollment": self.request.user
             .get_curriculum_enrollment(self.get_object())
         }
 
@@ -256,7 +258,7 @@ class GetCurriculumWithResources(generics.RetrieveAPIView):
         data = super().get_serializer_context()
         return {
             **data,
-            "enrolloment": self.request.user
+            "enrollment": self.request.user
             .get_curriculum_enrollment(self.get_object())
         }
 
@@ -296,9 +298,13 @@ class GetEnrolledCurriculumGrades(generics.RetrieveAPIView):
                 instance=syllabi_progress).data
             responses.append(data)
 
+        cur_serializer = serializers.EnrolledSingleCurriculumSerializer(
+                instance=cur, context={ "enrollment": enrollment })
+        # cur_serializer.context = {
+        #     "enrollment": enrollment
+        # }
         data = {
-            "curriculum": serializers.EnrolledSingleCurriculumSerializer(
-                instance=cur).data,
+            "curriculum": cur_serializer.data,
             "progress": responses
         }
         return Response(data)
@@ -333,8 +339,10 @@ class RateCurriculum(generics.CreateAPIView):
         review = serializer.save(enrollment=enrollment)
 
         # Classify review here, in live app use cron job
-        review.sentiment = sentiment_text(review.review)
-        review.label = classify_text(review.review)
+        review.sentiment = UserFeedback.SENTIMENT_REV_LOOKUP[analyze_sentiment(review.review)]
+        review.label = UserFeedback.LABEL_REV_LOOKUP[ModelLoader().predict(review.review)]
+        
+        print(review.sentiment, review.label)
         review.save()
 
     @swagger_auto_schema(

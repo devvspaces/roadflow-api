@@ -76,6 +76,26 @@ class RegisterAPIView(generics.CreateAPIView):
         return Response(data=user_serializer.data, status=status.HTTP_201_CREATED)
 
 
+class ResendOTPView(generics.GenericAPIView):
+    """
+    Resend the otp to user's email.
+    """
+
+    permission_classes = []
+    serializer_class = serializers.ResendOTPSerializer
+
+    @swagger_auto_schema(responses={200: serializers.MessageSerializer})
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["email"]
+        if user:
+            send_verification_email(user, request)
+        return Response({
+            "message": "OTP sent successfully"
+        })
+
+
 class ValidateRegistrationOtpView(generics.GenericAPIView):
     """
     Validate the otp sent to user's email.
@@ -84,13 +104,14 @@ class ValidateRegistrationOtpView(generics.GenericAPIView):
     permission_classes = []
     serializer_class = serializers.ValidateRegistrationOtpSerializer
 
-    @swagger_auto_schema(responses={200: serializers.UserSerializer})
+    @swagger_auto_schema(responses={200: serializers.LoginResponseSerializer200})
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         user_serializer = serializers.UserSerializer(user)
-        return Response(data=user_serializer.data, status=status.HTTP_201_CREATED)
+        response_data = {"tokens": get_tokens_for_user(user), "user": user_serializer.data}
+        return Response(response_data)
 
 
 class TokenRefreshAPIView(generics.GenericAPIView):

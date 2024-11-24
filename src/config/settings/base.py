@@ -231,7 +231,7 @@ OFF_EMAIL = True
 
 MAX_IMAGE_UPLOAD_SIZE = 2621440  # 2.5MB
 
-APP_NAME = 'RoadFlow'
+APP_NAME = 'RoadFlowAI'
 
 USERNAME_PREFIX = 'roadflow'
 

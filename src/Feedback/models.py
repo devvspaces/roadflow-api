@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class UserFeedback(models.Model):
@@ -10,13 +10,17 @@ class UserFeedback(models.Model):
         ('N', 'Negative'),
         ('N', 'Neutral'),
     )
+    SENTIMENT_REV_LOOKUP = {v: k for k, v in dict(SENTIMENT).items()}
+    
     LABEL = (
-        ('A', 'Overall User Experience'),
-        ('B', 'Customer Support'),
-        ('C', 'Content Quality'),
+        ('A', 'Course Content'),
+        ('B', 'Exercises'),
+        ('C', 'Course Structure'),
         ('D', 'Learning Experience'),
-        ('E', 'Community and Collaboration'),
+        ('E', 'Feature Request'),
+        ('F', 'Improvement'),
     )
+    LABEL_REV_LOOKUP = {v: k for k, v in dict(LABEL).items()}
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
