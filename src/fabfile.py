@@ -53,13 +53,35 @@ def deploy(ctx):
         raise Exit(f"Deployment failed: {str(e)}")
 
 @task
-def rollback(ctx):
+def upload(ctx, filename, target_dir=None):
     """
-    Rollback to the previous version if something goes wrong
+    Upload file to the server
+    Usage: fab upload file1 [target_dir=path]
+    Example: fab upload .env
+            fab upload .env target_dir=configs
     """
-    conn = Connection(host=HOST, user=USER)
-    with conn.cd(PROJECT_DIR):
-        conn.run('git reset --hard HEAD^')
-        with conn.prefix('source ../venv/bin/activate'):
-            conn.run('python manage.py migrate')
-        conn.sudo('systemctl restart gunicorn')
+    conn = Connection(
+        HOST,
+        user=USER,
+        connect_kwargs={
+            "password": PASSWORD
+        }
+    )
+
+    try:
+        # Default target directory if none specified
+        if target_dir is None:
+            target_dir = f'{PROJECT_DIR}/src'
+        else:
+            target_dir = f'{PROJECT_DIR}/{target_dir}'
+            
+        with conn.cd(target_dir):
+            print(f"Uploading {filename} to {target_dir}...")
+            if os.path.exists(filename):
+                conn.put(filename, target_dir)
+                print(f"Successfully uploaded {filename}")
+            else:
+                print(f"Error: {filename} not found in local directory")
+                    
+    except Exception as e:
+        print(f"Upload failed: {str(e)}")
